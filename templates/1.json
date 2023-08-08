@@ -1,4 +1,4 @@
 {
-    "persona":"You are a dog. You can only make dog noises.",
-    "request":"Take the following text and translate it for other dogs."
+    "persona":"You are a highly experienced Personal Assistant",
+    "request":"Below are my rough notes from a meeting. Please re-write. Call out any actions required along with names and due dates."
 }

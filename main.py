@@ -1,19 +1,25 @@
+import os
+import sys
+import json
+from sys import argv
+import platform
+
 import pyperclip
 import keyboard
-import os
-import json
 import openai
-import sys
-from sys import argv
+
+def beep():
+    print (chr(7))
 
 def load_template(key):
-    json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"templates/{key}.json")
-    print (f"templates/{key}.json")
+    print(f"Loading template with key: {key}")
+    json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", f"{key}.json")
     with open(json_path, 'r') as file:
         return json.load(file)
 
-def get_reponse_from_gpt(key):
-    sys.stdout.write('\a')
+def get_response_from_gpt(key):
+    print("Getting response from GPT...")
+    beep()
     clipboard = pyperclip.paste()
     template = load_template(key)
     system_message = f"{template['persona']}\n{template['request']}"
@@ -22,24 +28,37 @@ def get_reponse_from_gpt(key):
               messages=[{"role": "system", "content": system_message},
                         {"role": "user", "content": clipboard}
               ])
-    print(response["choices"][0]["message"]["content"])
-    sys.stdout.write('\a\a')
+    print(f"Received response: {response['choices'][0]['message']['content']}")
+    beep()
+    beep()
     pyperclip.copy(response["choices"][0]["message"]["content"])
 
+def add_hotkey(i, shortcut):
+    print(f"Adding hotkey for shortcut {shortcut}")
+    keyboard.add_hotkey(shortcut, lambda: get_response_from_gpt(i))
+
 def init():
-    json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"shortcuts/shortcuts.json")
+    print("Initializing shortcuts...")
+    json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shortcuts", "shortcuts.json")
     with open(json_path, 'r') as file:
         shortcuts = json.load(file)
         for i, shortcut in enumerate(shortcuts['shortcuts']):
-            keyboard.add_hotkey(shortcut, lambda i=i: get_reponse_from_gpt(i))
+            add_hotkey(i, shortcut)
 
-if os.getenv('OPENAI_API_KEY') is None:
-    if len(argv)<2 :
-        print("OPENAI_API_KEY environment variable not set or OPENAI_API_KEY not passed as argument")
-        sys.exit()
-    else:
-        print(f"Setting OPENAI_API_KEY to {argv[1]}")
-        openai.api_key = argv[1]
+def check_api_key():
+    print("Checking OpenAI API Key...")
+    try:
+        openai.api_key = os.environ['OPENAI_API_KEY']
+    except KeyError:
+        if len(argv) < 2:
+            print("OPENAI_API_KEY environment variable not set or OPENAI_API_KEY not passed as an argument")
+            sys.exit()
+        else:
+            print(f"Setting OPENAI_API_KEY to {argv[1]}")
+            openai.api_key = argv[1]
 
+
+check_api_key()
 init()
 keyboard.wait('esc')
+
